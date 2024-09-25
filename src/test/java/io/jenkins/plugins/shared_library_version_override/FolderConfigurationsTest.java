@@ -31,6 +31,8 @@ import jenkins.plugins.git.GitSCMSource;
 import jenkins.plugins.git.GitSampleRepoRule;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.jenkinsci.plugins.workflow.libs.FolderLibraries;
 import org.jenkinsci.plugins.workflow.libs.GlobalLibraries;
 import org.jenkinsci.plugins.workflow.libs.LibraryConfiguration;
 import org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever;
@@ -58,6 +60,8 @@ public class FolderConfigurationsTest {
         sampleRepo.init();
         sampleRepo.write("vars/greet.groovy", "def call(recipient) {echo(/hello from $recipient/)}");
         sampleRepo.write("src/pkg/Clazz.groovy", "package pkg; class Clazz {static String whereAmI() {'master'}}");
+        sampleRepo.write(
+                "src/pkg/Runner.groovy", "package pkg; class Runner {void run(String command) { command.execute();}}");
         sampleRepo.git("add", "vars", "src");
         sampleRepo.git("commit", "--message=init");
 
@@ -67,7 +71,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withoutOverride() throws Exception {
+    public void withoutOverrideForGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -81,7 +85,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withFolderOverride() throws Exception {
+    public void withOverrideForGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -99,7 +103,44 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withAnotherFolderOverride() throws Exception {
+    public void withoutOverrideForFolderLevelLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        FolderLibraries fl = new FolderLibraries(Collections.singletonList(lc));
+        f.addProperty(fl);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
+        r.assertLogContains("hello from master", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withOverrideForFolderLevelLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        FolderLibraries fl = new FolderLibraries(Collections.singletonList(lc));
+        f.addProperty(fl);
+
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
+        r.assertLogContains("hello from develop", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withOverrideInAnotherFolder() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -136,7 +177,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withInvalidVersion() throws Exception {
+    public void withInvalidVersionOverride() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -154,7 +195,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withImmutableLibrary() throws Exception {
+    public void withImmutableGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -170,5 +211,109 @@ public class FolderConfigurationsTest {
         WorkflowJob p = f.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
         r.assertLogContains("hello from master", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withImmutableFolderLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        lc.setAllowVersionOverride(false);
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        FolderLibraries fl = new FolderLibraries(Collections.singletonList(lc));
+        f.addProperty(fl);
+
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
+        r.assertLogContains("hello from master", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withoutOverrideForDangerousCodeForGlobalLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        GlobalLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+                "@Library('greet') _; def r = new pkg.Runner(); r.run('touch /tmp/whatever')", true));
+
+        r.assertLogContains("Loading library greet@master", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withOverrideForDangerousCodeForGlobalLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        GlobalLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+                "@Library('greet') _; def r = new pkg.Runner(); r.run('touch /tmp/whatever')", true));
+
+        r.assertLogContains("Loading library greet@develop", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withoutOverrideForDangerousCodeForFolderLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        FolderLibraries fl = new FolderLibraries(Collections.singletonList(lc));
+        f.addProperty(fl);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+                "@Library('greet') _; def r = new pkg.Runner(); r.run('touch /tmp/whatever')", true));
+
+        WorkflowRun run = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("Loading library greet@master", run);
+        r.assertLogContains("Scripts not permitted to use staticMethod", run);
+    }
+
+    @Test
+    public void withOverrideForDangerousCodeForFolderLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        FolderLibraries fl = new FolderLibraries(Collections.singletonList(lc));
+        f.addProperty(fl);
+
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+                "@Library('greet') _; def r = new pkg.Runner(); r.run('touch /tmp/whatever')", true));
+
+        WorkflowRun run = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("Loading library greet@develop", run);
+        r.assertLogContains("Scripts not permitted to use staticMethod", run);
     }
 }
