@@ -90,8 +90,7 @@ public class LibraryCustomConfiguration extends AbstractDescribableImpl<LibraryC
 
             Set<String> libNames = new TreeSet<>();
             ItemGroup<?> group = getItemGroupFromItem(item);
-            Collection<LibraryConfiguration> libs =
-                    FolderConfigurations.CustomLibraryResolver.getDefinedLibrariesForGroup(group);
+            Collection<LibraryConfiguration> libs = FolderConfigurations.getDefinedLibrariesForGroup(group);
             for (LibraryConfiguration lib : libs) {
                 libNames.add(lib.getName());
             }
@@ -117,8 +116,7 @@ public class LibraryCustomConfiguration extends AbstractDescribableImpl<LibraryC
             List<FormValidation> validations = new ArrayList<>();
             // Check name existence and version override allowance
             ItemGroup<?> group = getItemGroupFromItem(item);
-            Collection<LibraryConfiguration> libs =
-                    FolderConfigurations.CustomLibraryResolver.getDefinedLibrariesForGroup(group);
+            Collection<LibraryConfiguration> libs = FolderConfigurations.getDefinedLibrariesForGroup(group);
             LibraryConfiguration lib = libs.stream()
                     .filter(l -> l.getName().equals(name))
                     .findFirst()
