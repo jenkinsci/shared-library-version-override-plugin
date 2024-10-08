@@ -6,7 +6,6 @@ import com.cloudbees.hudson.plugins.folder.AbstractFolderPropertyDescriptor;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
-import hudson.ExtensionList;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
@@ -14,10 +13,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.jenkinsci.plugins.workflow.libs.FolderLibraries;
-import org.jenkinsci.plugins.workflow.libs.GlobalLibraries;
-import org.jenkinsci.plugins.workflow.libs.LibraryConfiguration;
-import org.jenkinsci.plugins.workflow.libs.LibraryResolver;
+import org.jenkinsci.plugins.workflow.libs.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -69,28 +65,33 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
     }
 
     /**
-     * Return all known LibraryConfigurations including Global Libraries
+     * Return all known LibraryConfigurations for an ItemGroup
      * @param group the context
      * @return the known LibraryConfigurations
      */
-    public static Collection<LibraryConfiguration> getDefinedLibrariesForGroup(ItemGroup<?> group) {
-        return getDefinedLibrariesForGroup(group, true);
+    public static Collection<LibraryConfiguration> getAllLibrariesForGroup(ItemGroup<?> group) {
+        List<LibraryConfiguration> libraries = new ArrayList<>();
+        GlobalLibraries libs = GlobalLibraries.get();
+        libraries.addAll(libs.getLibraries());
+        libraries.addAll(getAllUntrustedLibrariesForGroup(group));
+        LOGGER.log(
+                Level.FINE,
+                "FolderConfigurations.getAllLibrariesForGroup {0}\n",
+                libraries.stream().map(LibraryConfiguration::getName).collect(Collectors.toList()));
+        return libraries;
     }
 
     /**
-     * Return all known LibraryConfigurations including or not Global Libraries
+     * Return all known Untrusted LibraryConfigurations for an ItemGroup
      * @param group the context
-     * @param includeGlobalLibraries if true then Global Libraries are not returned
-     * @return the known LibraryConfigurations
+     * @return the known Untrusted LibraryConfigurations
      */
-    public static Collection<LibraryConfiguration> getDefinedLibrariesForGroup(
-            ItemGroup<?> group, boolean includeGlobalLibraries) {
+    public static Collection<LibraryConfiguration> getAllUntrustedLibrariesForGroup(ItemGroup<?> group) {
         List<LibraryConfiguration> libraries = new ArrayList<>();
-        // Get all global librairies
-        if (includeGlobalLibraries) {
-            GlobalLibraries libs = ExtensionList.lookupSingleton(GlobalLibraries.class);
-            libraries.addAll(libs.getLibraries());
-        }
+        // Get all global untrusted libraries
+        GlobalUntrustedLibraries libs = GlobalUntrustedLibraries.get();
+        libraries.addAll(libs.getLibraries());
+
         // Get all folder local libraries
         for (ItemGroup<?> g = group; g instanceof AbstractFolder; g = ((AbstractFolder<?>) g).getParent()) {
             AbstractFolder<?> f = (AbstractFolder<?>) g;
@@ -101,7 +102,7 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
         }
         LOGGER.log(
                 Level.FINE,
-                "FolderConfigurations.getDefinedLibrariesForGroup {0}\n",
+                "FolderConfigurations.getAllUntrustedLibrariesForGroup {0}\n",
                 libraries.stream().map(LibraryConfiguration::getName).collect(Collectors.toList()));
         return libraries;
     }
@@ -149,8 +150,7 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
 
         private Collection<LibraryConfiguration> forGroup(@CheckForNull ItemGroup<?> group, boolean checkPermission) {
             // Get all global libraries
-            Collection<LibraryConfiguration> allLibs =
-                    ExtensionList.lookupSingleton(GlobalLibraries.class).getLibraries();
+            Collection<LibraryConfiguration> allLibs = GlobalLibraries.get().getLibraries();
             List<LibraryConfiguration> libraries = new ArrayList<>();
             for (ItemGroup<?> g = group; g instanceof AbstractFolder; g = ((AbstractFolder<?>) g).getParent()) {
                 AbstractFolder<?> f = (AbstractFolder<?>) g;
@@ -193,8 +193,8 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
         }
 
         private Collection<LibraryConfiguration> forGroup(@CheckForNull ItemGroup<?> group, boolean checkPermission) {
-            // Get all folder-level libraries
-            Collection<LibraryConfiguration> allLibs = getDefinedLibrariesForGroup(group, false);
+            // Get all untrusted libraries
+            Collection<LibraryConfiguration> allLibs = getAllUntrustedLibrariesForGroup(group);
             List<LibraryConfiguration> libraries = new ArrayList<>();
             for (ItemGroup<?> g = group; g instanceof AbstractFolder; g = ((AbstractFolder<?>) g).getParent()) {
                 AbstractFolder<?> f = (AbstractFolder<?>) g;
