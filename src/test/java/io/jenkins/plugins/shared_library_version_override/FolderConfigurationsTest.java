@@ -32,10 +32,7 @@ import jenkins.plugins.git.GitSampleRepoRule;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.jenkinsci.plugins.workflow.libs.FolderLibraries;
-import org.jenkinsci.plugins.workflow.libs.GlobalLibraries;
-import org.jenkinsci.plugins.workflow.libs.LibraryConfiguration;
-import org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever;
+import org.jenkinsci.plugins.workflow.libs.*;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -97,6 +94,38 @@ public class FolderConfigurationsTest {
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
         GlobalLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
+        r.assertLogContains("hello from develop", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withoutOverrideForGlobalUntrustedLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        GlobalUntrustedLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
+        r.assertLogContains("hello from master", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withOverrideForGlobalUntrustedLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        GlobalUntrustedLibraries.get().setLibraries(Collections.singletonList(lc));
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
@@ -221,6 +250,25 @@ public class FolderConfigurationsTest {
     }
 
     @Test
+    public void withImmutableGlobalUntrustedLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        lc.setAllowVersionOverride(false);
+        GlobalUntrustedLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
+        r.assertLogContains("hello from master", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
     public void withImmutableFolderLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
@@ -259,6 +307,24 @@ public class FolderConfigurationsTest {
     }
 
     @Test
+    public void withoutOverrideForDangerousCodeForGlobalUntrustedLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        GlobalUntrustedLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
+
+        WorkflowRun run = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("Loading library greet@master", run);
+        r.assertLogContains("Scripts not permitted to use staticMethod", run);
+    }
+
+    @Test
     public void withOverrideForDangerousCodeForGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
@@ -277,6 +343,29 @@ public class FolderConfigurationsTest {
                 String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
 
         r.assertLogContains("Loading library greet@develop", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withOverrideForDangerousCodeForGlobalUntrustedLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        GlobalUntrustedLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition(
+                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
+
+        WorkflowRun run = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("Loading library greet@develop", run);
+        r.assertLogContains("Scripts not permitted to use staticMethod", run);
     }
 
     @Test
