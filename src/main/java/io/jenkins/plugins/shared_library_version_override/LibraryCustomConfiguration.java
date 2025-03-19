@@ -68,7 +68,7 @@ public class LibraryCustomConfiguration extends AbstractDescribableImpl<LibraryC
                 return FormValidation.ok();
             } else {
                 for (LibraryResolver resolver : ExtensionList.lookup(LibraryResolver.class)) {
-                    for (LibraryConfiguration config : resolver.fromConfiguration(Stapler.getCurrentRequest())) {
+                    for (LibraryConfiguration config : resolver.fromConfiguration(Stapler.getCurrentRequest2())) {
                         if (config.getName().equals(name)) {
                             return config.getRetriever().validateVersion(name, version, item);
                         }
