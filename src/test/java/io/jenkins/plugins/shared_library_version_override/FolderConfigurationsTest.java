@@ -25,36 +25,37 @@ package io.jenkins.plugins.shared_library_version_override;
  */
 
 import com.cloudbees.hudson.plugins.folder.Folder;
+import hudson.Functions;
 import hudson.model.Result;
 import java.util.Collections;
 import jenkins.plugins.git.GitSCMSource;
 import jenkins.plugins.git.GitSampleRepoRule;
+import jenkins.plugins.git.junit.jupiter.WithGitSampleRepo;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jenkinsci.plugins.workflow.libs.*;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class FolderConfigurationsTest {
+@WithJenkins
+@WithGitSampleRepo
+class FolderConfigurationsTest {
 
-    @ClassRule
-    public static BuildWatcher buildWatcher = new BuildWatcher();
+    private JenkinsRule r;
 
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+    private GitSampleRepoRule sampleRepo;
 
-    @Rule
-    public GitSampleRepoRule sampleRepo = new GitSampleRepoRule();
+    private static final String UNSECURE_COMMAND =
+            Functions.isWindows() ? "cmd /c mkdir %temp%\\\\whatever" : "mktemp -d";
 
-    public String unsecureCommand = "mktemp -d";
+    @BeforeEach
+    void initNewRepository(JenkinsRule rule, GitSampleRepoRule repo) throws Exception {
+        r = rule;
+        sampleRepo = repo;
 
-    @Before
-    public void initNewRepository() throws Exception {
         // Create sample repo
         sampleRepo.init();
         sampleRepo.write("vars/greet.groovy", "def call(recipient) {echo(/hello from $recipient/)}");
@@ -67,15 +68,10 @@ public class FolderConfigurationsTest {
         sampleRepo.git("checkout", "-b", "develop");
         sampleRepo.write("src/pkg/Clazz.groovy", "package pkg; class Clazz {static String whereAmI() {'develop'}}");
         sampleRepo.git("commit", "--all", "--message=branching");
-
-        String os = System.getProperty("os.name");
-        if (os.contains("Windows")) {
-            unsecureCommand = "cmd /c mkdir %temp%\\\\whatever";
-        }
     }
 
     @Test
-    public void withoutOverrideForGlobalLibrary() throws Exception {
+    void withoutOverrideForGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -89,7 +85,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withOverrideForGlobalLibrary() throws Exception {
+    void withOverrideForGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -107,7 +103,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withoutOverrideForGlobalUntrustedLibrary() throws Exception {
+    void withoutOverrideForGlobalUntrustedLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -121,7 +117,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withOverrideForGlobalUntrustedLibrary() throws Exception {
+    void withOverrideForGlobalUntrustedLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -139,7 +135,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withoutOverrideForFolderLevelLibrary() throws Exception {
+    void withoutOverrideForFolderLevelLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -155,7 +151,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withOverrideForFolderLevelLibrary() throws Exception {
+    void withOverrideForFolderLevelLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -176,7 +172,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withOverrideInAnotherFolder() throws Exception {
+    void withOverrideInAnotherFolder() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -195,7 +191,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withJenkinsfileOverride() throws Exception {
+    void withJenkinsfileOverride() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -213,7 +209,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withInvalidVersionOverride() throws Exception {
+    void withInvalidVersionOverride() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -231,7 +227,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withImmutableGlobalLibrary() throws Exception {
+    void withImmutableGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -250,7 +246,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withImmutableGlobalUntrustedLibrary() throws Exception {
+    void withImmutableGlobalUntrustedLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -269,7 +265,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withImmutableFolderLibrary() throws Exception {
+    void withImmutableFolderLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -291,7 +287,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withoutOverrideForDangerousCodeForGlobalLibrary() throws Exception {
+    void withoutOverrideForDangerousCodeForGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -301,13 +297,13 @@ public class FolderConfigurationsTest {
 
         WorkflowJob p = f.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
-                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
+                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", UNSECURE_COMMAND), true));
 
         r.assertLogContains("Loading library greet@master", r.buildAndAssertSuccess(p));
     }
 
     @Test
-    public void withoutOverrideForDangerousCodeForGlobalUntrustedLibrary() throws Exception {
+    void withoutOverrideForDangerousCodeForGlobalUntrustedLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -317,7 +313,7 @@ public class FolderConfigurationsTest {
 
         WorkflowJob p = f.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
-                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
+                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", UNSECURE_COMMAND), true));
 
         WorkflowRun run = r.buildAndAssertStatus(Result.FAILURE, p);
         r.assertLogContains("Loading library greet@master", run);
@@ -325,7 +321,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withOverrideForDangerousCodeForGlobalLibrary() throws Exception {
+    void withOverrideForDangerousCodeForGlobalLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -340,13 +336,13 @@ public class FolderConfigurationsTest {
 
         WorkflowJob p = f.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
-                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
+                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", UNSECURE_COMMAND), true));
 
         r.assertLogContains("Loading library greet@develop", r.buildAndAssertSuccess(p));
     }
 
     @Test
-    public void withOverrideForDangerousCodeForGlobalUntrustedLibrary() throws Exception {
+    void withOverrideForDangerousCodeForGlobalUntrustedLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -361,7 +357,7 @@ public class FolderConfigurationsTest {
 
         WorkflowJob p = f.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
-                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
+                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", UNSECURE_COMMAND), true));
 
         WorkflowRun run = r.buildAndAssertStatus(Result.FAILURE, p);
         r.assertLogContains("Loading library greet@develop", run);
@@ -369,7 +365,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withoutOverrideForDangerousCodeForFolderLibrary() throws Exception {
+    void withoutOverrideForDangerousCodeForFolderLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -381,7 +377,7 @@ public class FolderConfigurationsTest {
 
         WorkflowJob p = f.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
-                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
+                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", UNSECURE_COMMAND), true));
 
         WorkflowRun run = r.buildAndAssertStatus(Result.FAILURE, p);
         r.assertLogContains("Loading library greet@master", run);
@@ -389,7 +385,7 @@ public class FolderConfigurationsTest {
     }
 
     @Test
-    public void withOverrideForDangerousCodeForFolderLibrary() throws Exception {
+    void withOverrideForDangerousCodeForFolderLibrary() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -406,7 +402,7 @@ public class FolderConfigurationsTest {
 
         WorkflowJob p = f.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
-                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", unsecureCommand), true));
+                String.format("@Library('greet') _; def r = new pkg.Runner(); r.run('%s')", UNSECURE_COMMAND), true));
 
         WorkflowRun run = r.buildAndAssertStatus(Result.FAILURE, p);
         r.assertLogContains("Loading library greet@develop", run);
