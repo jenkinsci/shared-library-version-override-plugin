@@ -1,27 +1,32 @@
 package io.jenkins.plugins.shared_library_version_override;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
 import jenkins.plugins.git.GitSCMSource;
 import jenkins.plugins.git.GitSampleRepoRule;
+import jenkins.plugins.git.junit.jupiter.WithGitSampleRepo;
 import org.jenkinsci.plugins.workflow.libs.GlobalLibraries;
 import org.jenkinsci.plugins.workflow.libs.LibraryConfiguration;
 import org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class LibraryCustomConfigurationTest {
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+@WithGitSampleRepo
+class LibraryCustomConfigurationTest {
 
-    @Rule
-    public GitSampleRepoRule sampleRepo = new GitSampleRepoRule();
+    private JenkinsRule r;
 
-    @Before
-    public void initNewRepository() throws Exception {
+    private GitSampleRepoRule sampleRepo;
+
+    @BeforeEach
+    void initNewRepository(JenkinsRule rule, GitSampleRepoRule repo) throws Exception {
+        r = rule;
+        sampleRepo = repo;
+
         // Create sample repo
         sampleRepo.init();
         sampleRepo.write("vars/greet.groovy", "def call(recipient) {echo(/hello from $recipient/)}");
@@ -40,7 +45,7 @@ public class LibraryCustomConfigurationTest {
     }
 
     @Test
-    public void validNameAndVersion() throws Exception {
+    void validNameAndVersion() {
         String libraryName = "  greet   ";
         String defaultVersion = "   master   ";
 
