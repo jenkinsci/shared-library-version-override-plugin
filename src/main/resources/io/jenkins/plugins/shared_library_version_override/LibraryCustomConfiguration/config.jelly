@@ -6,6 +6,9 @@
     <f:entry title="${%Version}" field="version">
         <f:textbox checkMethod="post"/>
     </f:entry>
+    <f:entry title="${%FilterByName}" field="nameFilter">
+        <f:textbox default="*" />
+    </f:entry>
     <f:entry>
         <f:validateButton title="${%Validate}"
                           method="validate" with="name,version" />

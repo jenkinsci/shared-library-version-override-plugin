@@ -16,6 +16,7 @@ With this plugin, you can configure a specific version of a [Shared Library](htt
 - Be sure you have [Pipeline Groovy Libraries](https://plugins.jenkins.io/pipeline-groovy-lib/) installed
 - Go to the configuration page of your Folder, Organization Folder, Pipeline Multibranches, ...
 - Under The *Shared Library Version Override* section, add a new *Custom Configuration* element
+- Optionally set *Filter branch by name (with wildcards)* to restrict the override to matching branch names. The default is `*`, which applies the override to every branch.
 
 ![Configuration](doc/assets/configuration.png)
 
@@ -28,4 +29,3 @@ With this plugin, you can configure a specific version of a [Shared Library](htt
 ## LICENSE
 
 Licensed under MIT, see [LICENSE](LICENSE.md)
-
