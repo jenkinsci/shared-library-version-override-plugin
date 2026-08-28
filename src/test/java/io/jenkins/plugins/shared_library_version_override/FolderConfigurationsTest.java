@@ -27,9 +27,6 @@ package io.jenkins.plugins.shared_library_version_override;
 import com.cloudbees.hudson.plugins.folder.Folder;
 import hudson.Functions;
 import hudson.model.Result;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import jenkins.plugins.git.GitSCMSource;
 import jenkins.plugins.git.GitSampleRepoRule;

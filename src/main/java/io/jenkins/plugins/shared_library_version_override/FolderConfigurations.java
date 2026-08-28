@@ -3,7 +3,6 @@ package io.jenkins.plugins.shared_library_version_override;
 import com.cloudbees.hudson.plugins.folder.AbstractFolder;
 import com.cloudbees.hudson.plugins.folder.AbstractFolderProperty;
 import com.cloudbees.hudson.plugins.folder.AbstractFolderPropertyDescriptor;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Item;
@@ -144,7 +143,8 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
      * @param allLibs all available library configurations
      * @return the list of resolved library configurations
      */
-    public static List<LibraryConfiguration> getResolvedLibrariesForJob(Job<?, ?> job, Collection<LibraryConfiguration> allLibs) {
+    public static List<LibraryConfiguration> getResolvedLibrariesForJob(
+            Job<?, ?> job, Collection<LibraryConfiguration> allLibs) {
         List<LibraryConfiguration> libraries = new ArrayList<>();
         for (ItemGroup<?> g = job.getParent(); g instanceof AbstractFolder; g = ((AbstractFolder<?>) g).getParent()) {
             AbstractFolder<?> f = (AbstractFolder<?>) g;
@@ -184,7 +184,8 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
         public Collection<LibraryConfiguration> forJob(
                 @NonNull Job<?, ?> job, @NonNull Map<String, String> libraryVersions) {
             // Get all global libraries
-            List<LibraryConfiguration> libraries = getResolvedLibrariesForJob(job, GlobalLibraries.get().getLibraries());
+            List<LibraryConfiguration> libraries =
+                    getResolvedLibrariesForJob(job, GlobalLibraries.get().getLibraries());
             LOGGER.log(
                     Level.FINE,
                     "CustomFolderLibraryResolver.forJob {0}\n",
@@ -209,7 +210,8 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
         public Collection<LibraryConfiguration> forJob(
                 @NonNull Job<?, ?> job, @NonNull Map<String, String> libraryVersions) {
             // Get all untrusted libraries
-            List<LibraryConfiguration> libraries = getResolvedLibrariesForJob(job, getAllUntrustedLibrariesForGroup(job.getParent()));
+            List<LibraryConfiguration> libraries =
+                    getResolvedLibrariesForJob(job, getAllUntrustedLibrariesForGroup(job.getParent()));
             LOGGER.log(
                     Level.FINE,
                     "CustomUntrustedLibraryResolver.forJob {0}\n",
