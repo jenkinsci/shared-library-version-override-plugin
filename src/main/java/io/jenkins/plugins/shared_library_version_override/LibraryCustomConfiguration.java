@@ -3,16 +3,17 @@ package io.jenkins.plugins.shared_library_version_override;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.Util;
-import hudson.model.AbstractDescribableImpl;
-import hudson.model.Descriptor;
-import hudson.model.Item;
-import hudson.model.ItemGroup;
+import hudson.model.*;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.workflow.libs.LibraryConfiguration;
 import org.jenkinsci.plugins.workflow.libs.LibraryResolver;
 import org.kohsuke.stapler.AncestorInPath;
@@ -31,11 +32,13 @@ public class LibraryCustomConfiguration extends AbstractDescribableImpl<LibraryC
 
     public String name;
     public String version;
+    public String nameFilter;
 
     @DataBoundConstructor
-    public LibraryCustomConfiguration(String name, String version) {
+    public LibraryCustomConfiguration(String name, String version, String nameFilter) {
         this.name = Util.fixEmptyAndTrim(name);
         this.version = Util.fixEmptyAndTrim(version);
+        this.nameFilter = StringUtils.defaultIfBlank(nameFilter, "*");
     }
 
     public String getName() {
@@ -44,6 +47,42 @@ public class LibraryCustomConfiguration extends AbstractDescribableImpl<LibraryC
 
     public String getVersion() {
         return version;
+    }
+
+    public String getNameFilter() {
+        return nameFilter;
+    }
+
+    /**
+     * Returns the pattern corresponding to the filter containing wildcards.
+     *
+     * @param filter the filter containing wildcards
+     * @return pattern corresponding to the filter containing wildcards
+     */
+    private String getPattern(String filter) {
+        StringBuilder quotedBranches = new StringBuilder();
+        for (String wildcard : filter.split(" ")) {
+            StringBuilder quotedBranch = new StringBuilder();
+            for (String f : wildcard.split("(?=[*])|(?<=[*])")) {
+                if (f.equals("*")) {
+                    quotedBranch.append(".*");
+                } else if (!f.isEmpty()) {
+                    quotedBranch.append(Pattern.quote(f));
+                }
+            }
+            if (quotedBranches.length() > 0) {
+                quotedBranches.append("|");
+            }
+            quotedBranches.append(quotedBranch);
+        }
+        return quotedBranches.toString();
+    }
+
+    public boolean isApplicableToJob(Job<?, ?> job) {
+        if (job == null) {
+            return false;
+        }
+        return Pattern.matches(getPattern(getNameFilter()), URLDecoder.decode(job.getName(), StandardCharsets.UTF_8));
     }
 
     @Extension
@@ -64,6 +103,14 @@ public class LibraryCustomConfiguration extends AbstractDescribableImpl<LibraryC
         @POST
         public FormValidation doCheckVersion(
                 @AncestorInPath Item item, @QueryParameter String version, @QueryParameter String name) {
+            if (item == null) {
+                Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+                LOGGER.log(Level.FINE, "DescriptorImpl.doCheckVersion for item null\n");
+            } else {
+                item.checkPermission(Item.CONFIGURE);
+                LOGGER.log(Level.FINE, "DescriptorImpl.doCheckVersion for item {0}\n", item.getName());
+            }
+
             if (version.isEmpty()) {
                 return FormValidation.ok();
             } else {

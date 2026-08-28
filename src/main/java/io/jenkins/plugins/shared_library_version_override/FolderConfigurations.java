@@ -3,7 +3,6 @@ package io.jenkins.plugins.shared_library_version_override;
 import com.cloudbees.hudson.plugins.folder.AbstractFolder;
 import com.cloudbees.hudson.plugins.folder.AbstractFolderProperty;
 import com.cloudbees.hudson.plugins.folder.AbstractFolderPropertyDescriptor;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Item;
@@ -138,6 +137,38 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
     }
 
     /**
+     * Return the resolved library configurations for a given job.
+     *
+     * @param job the Jenkins job
+     * @param allLibs all available library configurations
+     * @return the list of resolved library configurations
+     */
+    public static List<LibraryConfiguration> getResolvedLibrariesForJob(
+            Job<?, ?> job, Collection<LibraryConfiguration> allLibs) {
+        List<LibraryConfiguration> libraries = new ArrayList<>();
+        for (ItemGroup<?> g = job.getParent(); g instanceof AbstractFolder; g = ((AbstractFolder<?>) g).getParent()) {
+            AbstractFolder<?> f = (AbstractFolder<?>) g;
+            if (f.hasPermission(Item.CONFIGURE)) {
+                FolderConfigurations prop = f.getProperties().get(FolderConfigurations.class);
+                if (prop != null) {
+                    for (LibraryCustomConfiguration item : prop.getOverrides()) {
+                        // check item filters for the current job
+                        if (!item.isApplicableToJob(job)) {
+                            continue;
+                        }
+
+                        LibraryConfiguration libConfig = getLibraryConfiguration(item, allLibs);
+                        if (libConfig != null) {
+                            libraries.add(libConfig);
+                        }
+                    }
+                }
+            }
+        }
+        return libraries;
+    }
+
+    /**
      * Simulate a new LibraryResolver for Trusted Libraries (Global-level Libraries)
      */
     @Extension(ordinal = 1000) // Priority over pipeline-groovy-lib
@@ -148,36 +179,18 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
             return true;
         }
 
-        private Collection<LibraryConfiguration> forGroup(@CheckForNull ItemGroup<?> group, boolean checkPermission) {
-            // Get all global libraries
-            Collection<LibraryConfiguration> allLibs = GlobalLibraries.get().getLibraries();
-            List<LibraryConfiguration> libraries = new ArrayList<>();
-            for (ItemGroup<?> g = group; g instanceof AbstractFolder; g = ((AbstractFolder<?>) g).getParent()) {
-                AbstractFolder<?> f = (AbstractFolder<?>) g;
-                if (!checkPermission || f.hasPermission(Item.CONFIGURE)) {
-                    FolderConfigurations prop = f.getProperties().get(FolderConfigurations.class);
-                    if (prop != null) {
-                        for (LibraryCustomConfiguration item : prop.getOverrides()) {
-                            LibraryConfiguration libConfig = getLibraryConfiguration(item, allLibs);
-                            if (libConfig != null) {
-                                libraries.add(libConfig);
-                            }
-                        }
-                    }
-                }
-            }
-            LOGGER.log(
-                    Level.FINE,
-                    "CustomFolderLibraryResolver.forGroup {0}\n",
-                    libraries.stream().map(LibraryConfiguration::getName).collect(Collectors.toList()));
-            return libraries;
-        }
-
         @NonNull
         @Override
         public Collection<LibraryConfiguration> forJob(
                 @NonNull Job<?, ?> job, @NonNull Map<String, String> libraryVersions) {
-            return forGroup(job.getParent(), false);
+            // Get all global libraries
+            List<LibraryConfiguration> libraries =
+                    getResolvedLibrariesForJob(job, GlobalLibraries.get().getLibraries());
+            LOGGER.log(
+                    Level.FINE,
+                    "CustomFolderLibraryResolver.forJob {0}\n",
+                    libraries.stream().map(LibraryConfiguration::getName).collect(Collectors.toList()));
+            return libraries;
         }
     }
 
@@ -192,36 +205,18 @@ public class FolderConfigurations extends AbstractFolderProperty<AbstractFolder<
             return false;
         }
 
-        private Collection<LibraryConfiguration> forGroup(@CheckForNull ItemGroup<?> group, boolean checkPermission) {
-            // Get all untrusted libraries
-            Collection<LibraryConfiguration> allLibs = getAllUntrustedLibrariesForGroup(group);
-            List<LibraryConfiguration> libraries = new ArrayList<>();
-            for (ItemGroup<?> g = group; g instanceof AbstractFolder; g = ((AbstractFolder<?>) g).getParent()) {
-                AbstractFolder<?> f = (AbstractFolder<?>) g;
-                if (!checkPermission || f.hasPermission(Item.CONFIGURE)) {
-                    FolderConfigurations prop = f.getProperties().get(FolderConfigurations.class);
-                    if (prop != null) {
-                        for (LibraryCustomConfiguration item : prop.getOverrides()) {
-                            LibraryConfiguration libConfig = getLibraryConfiguration(item, allLibs);
-                            if (libConfig != null) {
-                                libraries.add(libConfig);
-                            }
-                        }
-                    }
-                }
-            }
-            LOGGER.log(
-                    Level.FINE,
-                    "CustomUntrustedLibraryResolver.forGroup {0}\n",
-                    libraries.stream().map(LibraryConfiguration::getName).collect(Collectors.toList()));
-            return libraries;
-        }
-
         @NonNull
         @Override
         public Collection<LibraryConfiguration> forJob(
                 @NonNull Job<?, ?> job, @NonNull Map<String, String> libraryVersions) {
-            return forGroup(job.getParent(), false);
+            // Get all untrusted libraries
+            List<LibraryConfiguration> libraries =
+                    getResolvedLibrariesForJob(job, getAllUntrustedLibrariesForGroup(job.getParent()));
+            LOGGER.log(
+                    Level.FINE,
+                    "CustomUntrustedLibraryResolver.forJob {0}\n",
+                    libraries.stream().map(LibraryConfiguration::getName).collect(Collectors.toList()));
+            return libraries;
         }
     }
 }

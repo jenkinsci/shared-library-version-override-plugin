@@ -85,7 +85,7 @@ class FolderConfigurationsTest {
     }
 
     @Test
-    void withOverrideForGlobalLibrary() throws Exception {
+    public void withoutOverrideForGlobalLibraryAndJobNameMatches() throws Exception {
         LibraryConfiguration lc =
                 new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
         lc.setDefaultVersion("master");
@@ -93,7 +93,43 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "PR-* good*");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "goodjob");
+        p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
+        r.assertLogContains("hello from develop", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withoutOverrideForGlobalLibraryAndJobNameDoesntMatches() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        GlobalLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "good*");
+        prop.setOverrides(Collections.singletonList(item));
+        f.addProperty(prop);
+
+        WorkflowJob p = f.createProject(WorkflowJob.class, "badjob");
+        p.setDefinition(new CpsFlowDefinition("@Library('greet') _; greet(pkg.Clazz.whereAmI())", true));
+        r.assertLogContains("hello from master", r.buildAndAssertSuccess(p));
+    }
+
+    @Test
+    public void withOverrideForGlobalLibrary() throws Exception {
+        LibraryConfiguration lc =
+                new LibraryConfiguration("greet", new SCMSourceRetriever(new GitSCMSource(sampleRepo.toString())));
+        lc.setDefaultVersion("master");
+        GlobalLibraries.get().setLibraries(Collections.singletonList(lc));
+
+        Folder f = r.jenkins.createProject(Folder.class, "f");
+        FolderConfigurations prop = new FolderConfigurations();
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -125,7 +161,7 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -162,7 +198,7 @@ class FolderConfigurationsTest {
         f.addProperty(fl);
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -180,7 +216,7 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -199,7 +235,7 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -217,7 +253,7 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "unknown");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "unknown", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -236,7 +272,7 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -255,7 +291,7 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -277,7 +313,7 @@ class FolderConfigurationsTest {
         f.addProperty(fl);
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -330,7 +366,7 @@ class FolderConfigurationsTest {
         Folder f = r.jenkins.createProject(Folder.class, "f");
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -351,7 +387,7 @@ class FolderConfigurationsTest {
         Folder f = r.jenkins.createProject(Folder.class, "f");
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -396,7 +432,7 @@ class FolderConfigurationsTest {
         f.addProperty(fl);
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
