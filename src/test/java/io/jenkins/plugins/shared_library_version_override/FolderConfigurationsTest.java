@@ -93,7 +93,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "PR-* good*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("PR-* good*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -111,7 +114,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "good*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("good*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -129,7 +135,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -161,7 +170,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -198,7 +210,10 @@ class FolderConfigurationsTest {
         f.addProperty(fl);
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -216,7 +231,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -235,7 +253,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -253,7 +274,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "unknown", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("unknown");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -272,7 +296,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -291,7 +318,10 @@ class FolderConfigurationsTest {
 
         Folder f = r.jenkins.createProject(Folder.class, "f");
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -313,7 +343,10 @@ class FolderConfigurationsTest {
         f.addProperty(fl);
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -366,7 +399,10 @@ class FolderConfigurationsTest {
         Folder f = r.jenkins.createProject(Folder.class, "f");
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -387,7 +423,10 @@ class FolderConfigurationsTest {
         Folder f = r.jenkins.createProject(Folder.class, "f");
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 
@@ -432,7 +471,10 @@ class FolderConfigurationsTest {
         f.addProperty(fl);
 
         FolderConfigurations prop = new FolderConfigurations();
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "develop", "*");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("develop");
+        item.setNameFilter("*");
         prop.setOverrides(Collections.singletonList(item));
         f.addProperty(prop);
 

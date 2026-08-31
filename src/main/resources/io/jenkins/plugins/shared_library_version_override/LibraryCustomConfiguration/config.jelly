@@ -7,7 +7,7 @@
         <f:textbox checkMethod="post"/>
     </f:entry>
     <f:entry title="${%FilterByName}" field="nameFilter">
-        <f:textbox default="*" />
+        <f:textbox default="${descriptor.defaultNameFilter}" />
     </f:entry>
     <f:entry>
         <f:validateButton title="${%Validate}"
