@@ -49,7 +49,10 @@ class LibraryCustomConfigurationTest {
         String libraryName = "  greet   ";
         String defaultVersion = "   master   ";
 
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration(libraryName, defaultVersion, null);
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName(libraryName);
+        item.setVersion(defaultVersion);
+
         assertEquals("greet", item.getName());
         assertEquals("master", item.getVersion());
         assertEquals("*", item.getNameFilter());
@@ -57,7 +60,10 @@ class LibraryCustomConfigurationTest {
 
     @Test
     public void defaultsBranchFilterToWildcard() {
-        LibraryCustomConfiguration item = new LibraryCustomConfiguration("greet", "master", " ");
+        LibraryCustomConfiguration item = new LibraryCustomConfiguration();
+        item.setName("greet");
+        item.setVersion("master");
+        item.setNameFilter(" ");
         assertEquals("*", item.getNameFilter());
     }
 }

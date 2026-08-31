@@ -1,5 +1,7 @@
 package io.jenkins.plugins.shared_library_version_override;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.Util;
@@ -13,13 +15,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.workflow.libs.LibraryConfiguration;
 import org.jenkinsci.plugins.workflow.libs.LibraryResolver;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.*;
 import org.kohsuke.stapler.verb.POST;
 
 /**
@@ -30,27 +28,46 @@ import org.kohsuke.stapler.verb.POST;
 public class LibraryCustomConfiguration extends AbstractDescribableImpl<LibraryCustomConfiguration> {
     private static final Logger LOGGER = Logger.getLogger(LibraryCustomConfiguration.class.getName());
 
-    public String name;
-    public String version;
-    public String nameFilter;
+    @CheckForNull
+    private String name;
+
+    @CheckForNull
+    private String version;
+
+    @CheckForNull
+    private String nameFilter;
 
     @DataBoundConstructor
-    public LibraryCustomConfiguration(String name, String version, String nameFilter) {
-        this.name = Util.fixEmptyAndTrim(name);
-        this.version = Util.fixEmptyAndTrim(version);
-        this.nameFilter = StringUtils.defaultIfBlank(nameFilter, "*");
-    }
+    public LibraryCustomConfiguration() {}
 
+    @CheckForNull
     public String getName() {
         return name;
     }
 
+    @CheckForNull
     public String getVersion() {
         return version;
     }
 
+    @NonNull
     public String getNameFilter() {
-        return nameFilter;
+        return nameFilter != null ? nameFilter : DescriptorImpl.defaultNameFilter;
+    }
+
+    @DataBoundSetter
+    public void setName(@NonNull String name) {
+        this.name = Util.fixEmptyAndTrim(name);
+    }
+
+    @DataBoundSetter
+    public void setVersion(@NonNull String version) {
+        this.version = Util.fixEmptyAndTrim(version);
+    }
+
+    @DataBoundSetter
+    public void setNameFilter(@NonNull String nameFilter) {
+        this.nameFilter = Util.fixEmptyAndTrim(nameFilter);
     }
 
     /**
@@ -87,6 +104,7 @@ public class LibraryCustomConfiguration extends AbstractDescribableImpl<LibraryC
 
     @Extension
     public static class DescriptorImpl extends Descriptor<LibraryCustomConfiguration> {
+        public static final String defaultNameFilter = "*";
 
         private ItemGroup<?> getItemGroupFromItem(Item item) {
             ItemGroup<?> group = null;
